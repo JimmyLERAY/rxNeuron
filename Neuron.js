@@ -1,9 +1,9 @@
 const Rx = require('rxjs')
 
 module.exports = class Neuron {
+
     constructor(inputs) {
         this.output = Rx.ConnectableObservable.create(observer => { this.observer = observer })
-    
         this.weights = new Array(inputs.length).fill().map(val => Math.random())
         this.inputs = inputs.map((input, i) => input.map(val => val * this.weights[i]))
         this.core = Rx.Observable.merge(...this.inputs).bufferTime(5)
@@ -12,5 +12,5 @@ module.exports = class Neuron {
             .subscribe(val => { this.observer.next(1) })
     }
 
-    subscribe(callback) { this.output.subscribe(callback) }
+    subscribe(callback) { return this.output.subscribe(callback) }
 }
