@@ -1,10 +1,15 @@
 const Rx = require('rxjs')
 const Neuron = require('./Neuron')
 
-let neuron = new Neuron([
-    Rx.ConnectableObservable.interval(11).map(val => 1),
-    Rx.ConnectableObservable.interval(19).map(val => 1),
-    Rx.ConnectableObservable.interval(31).map(val => 1)
-])
+const neuron = new Neuron()
+neuron.subscribe()
 
-neuron.subscribe(val => console.log(1))
+// Emulate external hot sources
+const input1 = Rx.Observable.interval(11).map(val => 1).publish()
+const input2 = Rx.Observable.interval(19).map(val => 1).publish()
+const input3 = Rx.Observable.interval(31).map(val => 1).publish()
+input1.connect(); input2.connect(); input3.connect()
+
+neuron.addSynapses([input1, input2, input3])
+
+neuron.remSynapses([2,1])
