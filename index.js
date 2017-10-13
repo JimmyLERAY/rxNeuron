@@ -13,4 +13,4 @@ input1.connect(); input2.connect(); input3.connect()
 
 // Connect these sources then discconnect some
 neuron.addSyn([input1, input2, input3])
-neuron.remSyn([0,2])
+//setTimeout(() => { neuron.remSyn([0,2]) }, 5000)

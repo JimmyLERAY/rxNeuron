@@ -4,8 +4,11 @@ const Rx = require('rxjs')
 module.exports = class Neuron {
 
     constructor() {
+        this.rate = 1.01
+        this.delay = 1
         this.synapses = [] // Init the synapses array
         this.initOutput() // Init the output hot observable
+        this.resetCore() // Init the core of the neuron
     }
 
     initOutput() {
@@ -22,16 +25,34 @@ module.exports = class Neuron {
         // subscribe to the new core which merge, buffer and filter
         // all hot synapses sources into one observable
         this.core = Rx.Observable
-            .merge(...this.synapses.map(synapse => synapse.observable.map(impulse => impulse * synapse.weigth)))
-            .bufferTime(5) .map(buffer => buffer.reduce((sum, val) => sum + val, 0))
+            .merge(...this.synapses.map((synapse, idx) => {
+                return synapse.observable.map(impulse => {
+                    this.synapses[idx].activated = true
+                    setTimeout(() => { this.synapses[idx].activated = false }, this.delay)
+                    return impulse * synapse.weigth
+                })
+            }))
+            .bufferTime(this.delay)
+            .map(buffer => buffer.reduce((sum, val) => sum + val, 0))
             .filter(val => val > 0.5 * this.synapses.length)
-            .subscribe(() => { this.observer.next(1) })
-            console.log('Core connected')
+            .subscribe(() => {
+                this.updSyn()
+                this.observer.next(1)
+            })
+        console.log('Core connected')
+    }
+
+    updSyn() {
+        // Synapses weights update if activated in same time than the axone (Hebb rule)
+        this.synapses.forEach(synapse => {
+            synapse.weigth = synapse.activated ? Math.pow(synapse.weigth, 1/this.rate) : Math.pow(synapse.weigth, this.rate)
+        })
+        console.log(this.synapses.map(synapse => synapse.weigth))
     }
 
     addSyn(inputs) {
         // Add new references to inputs observables then reset the core source
-        this.synapses.push(...inputs.map(input => { return { observable: input, weigth: Math.random() } }))
+        this.synapses.push(...inputs.map(input => { return { observable: input, weigth: Math.random(), activated: false } }))
         console.log(`${ inputs.length } new synapse(s) connected`)
         this.resetCore()
     }
